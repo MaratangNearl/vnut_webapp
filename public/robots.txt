@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://vnut.yohane-aqours.com/sitemap.xml
