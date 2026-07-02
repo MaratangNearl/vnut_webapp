@@ -79,3 +79,4 @@ npm run preview
 
 추가 수정이나 README 내용 반영을 원하시면 알려주세요.
 
+E-mail: vnut_dev@yohane-aqours.com
