@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Game } from '../types';
 import { motion } from 'framer-motion';
 import { Edit2 } from 'lucide-react';
@@ -11,12 +11,37 @@ interface GameCardProps {
 
 const GameCard: React.FC<GameCardProps> = ({ game, onUpdated }) => {
   const [showEdit, setShowEdit] = useState(false);
-  
-  const coverUrl = useMemo(() => {
-    if (game.coverImage) {
-      return URL.createObjectURL(game.coverImage);
+
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (!game.coverImage) {
+      const timer = window.setTimeout(() => {
+        if (!isCancelled) setCoverUrl(null);
+      }, 0);
+
+      return () => {
+        isCancelled = true;
+        window.clearTimeout(timer);
+      };
     }
-    return null;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (!isCancelled && typeof reader.result === 'string') {
+        setCoverUrl(reader.result);
+      }
+    };
+    reader.onerror = () => {
+      if (!isCancelled) setCoverUrl(null);
+    };
+    reader.readAsDataURL(game.coverImage);
+
+    return () => {
+      isCancelled = true;
+    };
   }, [game.coverImage]);
 
   return (

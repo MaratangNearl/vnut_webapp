@@ -4,12 +4,12 @@ import initSqlJs from 'sql.js';
 
 // Local WASM path for maximum reliability in private environments
 const SQL_WASM_PATH = '/sql-wasm.wasm';
-export const MAX_BACKUP_ZIP_SIZE = 50 * 1024 * 1024;
-export const MAX_BACKUP_ENTRIES = 500;
-export const MAX_DB_SIZE = 10 * 1024 * 1024;
-export const MAX_CONFIG_SIZE = 128 * 1024;
-export const MAX_COVER_SIZE = 5 * 1024 * 1024;
-export const MAX_RESTORE_GAMES = 1000;
+export const MAX_BACKUP_ZIP_SIZE = 1024 * 1024 * 1024;
+export const MAX_BACKUP_ENTRIES = 2000;
+export const MAX_DB_SIZE = 200 * 1024 * 1024;
+export const MAX_CONFIG_SIZE = 2560 * 1024;
+export const MAX_COVER_SIZE = 100 * 1024 * 1024;
+export const MAX_RESTORE_GAMES = 20000;
 
 export class CloudSync {
   static async getSQL() {

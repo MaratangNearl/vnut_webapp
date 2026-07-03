@@ -9,9 +9,11 @@ import AddGameModal from './AddGameModal';
 import EditGameModal from './EditGameModal';
 import BackupRestoreModal from './BackupRestoreModal';
 import { DEFAULT_TIER_COLORS } from '../lib/utils';
-import { toJpeg } from 'html-to-image';
+import { toJpeg, type Options as HtmlToImageOptions } from 'html-to-image';
 
 type TierSortOrder = 'desc' | 'asc';
+const EXPORT_WIDTH = 1200;
+const EXPORT_PIXEL_RATIO = 2;
 
 const TierBoard: React.FC = () => {
   const { activeProjectId, projects, updateConfig } = useProjectStore();
@@ -71,20 +73,48 @@ const TierBoard: React.FC = () => {
   }, [fetchGames, tierOrder]);
 
   const handleExport = async () => {
-    if (!boardRef.current) return;
+    const exportNode = boardRef.current;
+    if (!exportNode) return;
+
     setIsExporting(true);
-    const originalWidth = boardRef.current.style.width;
-    const originalMinWidth = boardRef.current.style.minWidth;
+    const originalWidth = exportNode.style.width;
+    const originalMinWidth = exportNode.style.minWidth;
+    const exportWithTimeout = (options: HtmlToImageOptions) => new Promise<string>((resolve, reject) => {
+      const timer = window.setTimeout(() => reject(new Error('EXPORT_TIMEOUT')), 10000);
+      toJpeg(exportNode, options)
+        .then(resolve)
+        .catch(reject)
+        .finally(() => window.clearTimeout(timer));
+    });
+
     try {
-      boardRef.current.classList.add('exporting');
-      boardRef.current.style.width = '1200px';
-      boardRef.current.style.minWidth = '1200px';
+      exportNode.classList.add('exporting');
+      exportNode.style.width = `${EXPORT_WIDTH}px`;
+      exportNode.style.minWidth = `${EXPORT_WIDTH}px`;
       await new Promise(resolve => setTimeout(resolve, 500));
-      const dataUrl = await toJpeg(boardRef.current, {
+      const exportHeight = Math.ceil(exportNode.getBoundingClientRect().height);
+      const exportOptions: HtmlToImageOptions = {
+        width: EXPORT_WIDTH,
+        height: exportHeight,
+        canvasWidth: EXPORT_WIDTH,
+        canvasHeight: exportHeight,
+        pixelRatio: EXPORT_PIXEL_RATIO,
         quality: 0.95,
         backgroundColor: activeProject?.config.bg_color || '#121212',
+        imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
         filter: (node: HTMLElement) => !node.classList?.contains('no-export')
-      });
+      };
+      let dataUrl: string;
+      try {
+        dataUrl = await exportWithTimeout(exportOptions);
+      } catch (err) {
+        console.warn('Image export retrying without embedded fonts:', err);
+        dataUrl = await exportWithTimeout({
+          ...exportOptions,
+          skipFonts: true,
+          fontEmbedCSS: '',
+        });
+      }
       const link = document.createElement('a');
       link.download = `${activeProject?.name || 'tier-list'}.jpg`;
       link.href = dataUrl;
@@ -92,9 +122,9 @@ const TierBoard: React.FC = () => {
     } catch {
       alert(t.errorOccurred);
     } finally {
-      boardRef.current.classList.remove('exporting');
-      boardRef.current.style.width = originalWidth;
-      boardRef.current.style.minWidth = originalMinWidth;
+      exportNode.classList.remove('exporting');
+      exportNode.style.width = originalWidth;
+      exportNode.style.minWidth = originalMinWidth;
       setIsExporting(false);
     }
   };
