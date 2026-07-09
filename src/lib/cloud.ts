@@ -4,6 +4,7 @@ import initSqlJs from 'sql.js';
 
 // Local WASM path for maximum reliability in private environments
 const SQL_WASM_PATH = '/sql-wasm.wasm';
+const SQL_WASM_CDN_PATH = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.14.1/sql-wasm.wasm';
 export const MAX_BACKUP_ZIP_SIZE = 1024 * 1024 * 1024;
 export const MAX_BACKUP_ENTRIES = 2000;
 export const MAX_DB_SIZE = 200 * 1024 * 1024;
@@ -19,7 +20,14 @@ export class CloudSync {
       });
     } catch (err) {
       console.error('SQL WASM Loading failed:', err);
-      throw new Error('SQL_WASM_LOAD_FAILED', { cause: err });
+      try {
+        return await initSqlJs({
+          locateFile: () => SQL_WASM_CDN_PATH
+        });
+      } catch (fallbackErr) {
+        console.error('SQL WASM CDN fallback failed:', fallbackErr);
+        throw new Error('SQL_WASM_LOAD_FAILED', { cause: fallbackErr });
+      }
     }
   }
 
